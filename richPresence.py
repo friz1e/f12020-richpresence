@@ -3,14 +3,15 @@ from pypresence import Presence
 import socket
 import time
 
-client_id = ''
-RPC = Presence(client_id, pipe=0)
-RPC.connect()
-
 timer = int(round(time.time() * 1000))
 
 udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
+udp_socket.settimeout(10.0)
 udp_socket.bind(('', ))
+
+client_id = ''
+RPC = Presence(client_id)
+RPC.connect()
 
 def getPlayerIndex():
     while True:
@@ -19,7 +20,6 @@ def getPlayerIndex():
         if isinstance(packet, PacketLapData_V1):
             header = packet.header
             return header.playerCarIndex
-            break
 
 def trackSwitch(argument):
     switcher = {
@@ -79,9 +79,8 @@ def getCar():
     while True:
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
-        if isinstance(packet, ParticipantData_V1):
+        if isinstance(packet, PacketParticipantsData_V1):
             return teamSwitch(packet.participants[getPlayerIndex()].teamId)
-
 
 def getWeather():
     while True:
@@ -106,7 +105,14 @@ def getPlayerPosition():
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketLapData_V1):
-            return packet.lapData[getPlayerIndex()].carPosition
+            if(packet.lapData[getPlayerIndex()].carPosition==1):
+                return str(packet.lapData[getPlayerIndex()].carPosition)+"st"
+            if (packet.lapData[getPlayerIndex()].carPosition == 2):
+                return str(packet.lapData[getPlayerIndex()].carPosition) + "nd"
+            if (packet.lapData[getPlayerIndex()].carPosition == 3):
+                return str(packet.lapData[getPlayerIndex()].carPosition) + "rd"
+            else:
+                return str(packet.lapData[getPlayerIndex()].carPosition) + "th"
 
 
 def getNumberOfDrivers():
@@ -138,20 +144,24 @@ def getBestLap():
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketLapData_V1):
-            return packet.lapData[getPlayerIndex()].bestLapTime
+            if(packet.lapData[getPlayerIndex()].bestLapTime==0.0):
+                return "No lap time"
+            else:
+                return packet.lapData[getPlayerIndex()].bestLapTime
 
 
 def showRacePresence():
-    RPC.update(state=str(str(getPlayerPosition())+" out of "+str(getNumberOfDrivers()))+" drivers",
+    RPC.update(state=str(str(getPlayerPosition())+"/"+str(getNumberOfDrivers())),
                start=timer,
                details="Race | " +str(getLapNumber())+"/"+str(getTotalLapNumber())+" laps",
-               large_image = str(getTrack()),
-               small_image= str(getCar()),
+               large_image=str(getTrack()),
+               small_image=str(getCar()),
                large_text="Track",
                small_text="Car")
+
 def showQualiPresence(type):
     if(type=="ONE SHOT QUALI"):
-        RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
+        RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
                    start=timer,
                    details=type + " | " +getWeather(),
                    large_image=str(getTrack()),
@@ -160,40 +170,45 @@ def showQualiPresence(type):
                    small_text="Car")
 
     else:
-        RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
+        RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
                    start=timer,
-                   details= type+" | BEST LAP: " +str(getBestLap()),
+                   details= type+" | Best lap: " +str(getBestLap()),
                    large_image=str(getTrack()),
                    small_image= str(getCar()),
                    large_text="Track",
                    small_text="Car")
 def showTimeTrialPresence():
-    RPC.update(state="Weather:"+getWeather(),
+    RPC.update(state="Weather: "+getWeather(),
                start=timer,
-               details="BEST LAP: "+str(getBestLap()),
+               details= "Time Trial | "+str(getBestLap()),
                large_image = str(getTrack()),
                small_image= str(getCar()),
                large_text="Track",
                small_text="Car")
 
 while True:
-    udp_packet = udp_socket.recv(2048)
-    packet = unpack_udp_packet(udp_packet)
+    try:
+        udp_packet = udp_socket.recv(2048)
+        packet = unpack_udp_packet(udp_packet)
 
-    if (isinstance(packet, PacketSessionData_V1)):
-        if(packet.sessionType==10):
-            showRacePresence()
-        elif(packet.sessionType==5):
-            showQualiPresence("Q1")
-        elif(packet.sessionType==6):
-            showQualiPresence("Q2")
-        elif(packet.sessionType==7):
-            showQualiPresence("Q3")
-        elif(packet.sessionType==8):
-            showQualiPresence("SHORT QUALIFYING")
-        elif(packet.sessionType==9):
-            showQualiPresence("ONE SHOT QUALI")
-        elif(packet.sessionType==12):
-            showTimeTrialPresence()
+        if (isinstance(packet, PacketSessionData_V1)):
+            if (packet.sessionType == 10):
+                showRacePresence()
+            elif (packet.sessionType == 5):
+                showQualiPresence("Q1")
+            elif (packet.sessionType == 6):
+                showQualiPresence("Q2")
+            elif (packet.sessionType == 7):
+                showQualiPresence("Q3")
+            elif (packet.sessionType == 8):
+                showQualiPresence("SHORT QUALIFYING")
+            elif (packet.sessionType == 9):
+                showQualiPresence("ONE SHOT QUALI")
+            elif (packet.sessionType == 12):
+                showTimeTrialPresence()
+
+    except socket.timeout:
+        RPC.update(start=timer)
+
 
 
