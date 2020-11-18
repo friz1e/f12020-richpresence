@@ -145,33 +145,42 @@ def showRacePresence():
     RPC.update(state=str(str(getPlayerPosition())+" out of "+str(getNumberOfDrivers()))+" drivers",
                start=timer,
                details="Race | " +str(getLapNumber())+"/"+str(getTotalLapNumber())+" laps",
-               large_image = str(getTrack()))
+               large_image = str(getTrack()),
+               small_image= str(getCar()),
+               large_text="Track",
+               small_text="Car")
 def showQualiPresence(type):
     if(type=="ONE SHOT QUALI"):
+        print("type")
         RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
                    start=timer,
                    details=type + " | " +getWeather(),
-                   large_image=str(getTrack()))
+                   large_image=str(getTrack())
+                 )
     else:
         RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
                    start=timer,
                    details= type+" | BEST LAP: " +str(getBestLap()),
-                   large_image=str(getTrack()))
+                   large_image=str(getTrack()),
+                   small_image= str(getCar()),
+                   large_text="Track",
+                   small_text="Car")
 def showTimeTrialPresence():
     RPC.update(state="Weather:"+getWeather(),
                start=timer,
                details="BEST LAP: "+str(getBestLap()),
-               large_image = str(getTrack()))
+               large_image = str(getTrack()),
+               small_image= str(getCar()),
+               large_text="Track",
+               small_text="Car")
 
 while True:
     udp_packet = udp_socket.recv(2048)
     packet = unpack_udp_packet(udp_packet)
 
     if (isinstance(packet, PacketSessionData_V1)):
-        # race
         if(packet.sessionType==10):
             showRacePresence()
-
         elif(packet.sessionType==5):
             showQualiPresence("Q1")
         elif(packet.sessionType==6):
