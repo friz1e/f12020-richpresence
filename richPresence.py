@@ -151,12 +151,14 @@ def showRacePresence():
                small_text="Car")
 def showQualiPresence(type):
     if(type=="ONE SHOT QUALI"):
-        print("type")
         RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
                    start=timer,
                    details=type + " | " +getWeather(),
-                   large_image=str(getTrack())
-                 )
+                   large_image=str(getTrack()),
+                   small_image=str(getCar()),
+                   large_text="Track",
+                   small_text="Car")
+
     else:
         RPC.update(state=str(str(getPlayerPosition()) + " out of " + str(getNumberOfDrivers())) + " drivers.",
                    start=timer,
