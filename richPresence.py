@@ -269,6 +269,15 @@ def showTimeTrialPresence():
                large_text="Track",
                small_text=teamInCorrectFormat(getCar()))
 
+def showPracticePresence(type):
+    RPC.update(state="Weather: " + getWeather(),
+               start=timer,
+               details=type +" | " +str(getBestLap()),
+               large_image=str(getTrack()),
+               small_image=str(getCar()),
+               large_text="Track",
+               small_text=teamInCorrectFormat(getCar()))
+
 while True:
     try:
         udp_packet = udp_socket.recv(2048)
@@ -289,6 +298,14 @@ while True:
                 showQualiPresence("OSQ")
             elif (packet.sessionType == 12):
                 showTimeTrialPresence()
+            elif (packet.sessionType == 1):
+                showPracticePresence("P1")
+            elif (packet.sessionType == 2):
+                showTimeTrialPresence("P2")
+            elif (packet.sessionType == 3):
+                showTimeTrialPresence("P3")
+            elif (packet.sessionType == 4):
+                showTimeTrialPresence("Short Practice")
             else:
                 RPC.update(start=timer, large_image="f12020", details="Idling")
 
