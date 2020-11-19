@@ -12,6 +12,7 @@ udp_socket.bind(('', ))
 client_id = ''
 RPC = Presence(client_id)
 RPC.connect()
+RPC.update(start=timer, large_image="f12020")
 
 def getPlayerIndex():
     while True:
@@ -73,14 +74,46 @@ def teamSwitch(argument):
         8: "mclaren",
         9: "alfaromeo",
     }
+    return switcher.get(argument, "Invalid car.")
+
+def teamInCorrectFormat(argument):
+    switcher = {
+        "mercedes": "Mercedes",
+        "ferrari": "Ferrari",
+        "redbullracing": "Red Bull Racing",
+        "williams": "Williams",
+        "racingpoint": "Racing Point",
+        "renault": "Renault",
+        "alphatauri": "Alpha Tauri",
+        "haas": "Haas",
+        "mclaren": "McLaren",
+        "alfaromeo": "Alfa Romeo",
+        "classicf1car": "Classic F1 Car",
+        "f2car": "F2 Car"
+    }
     return switcher.get(argument, "Invalid team.")
+
+def getAlternativeCarTypes():
+    while True:
+        udp_packet = udp_socket.recv(2048)
+        packet = unpack_udp_packet(udp_packet)
+        if isinstance(packet, PacketCarStatusData_V1):
+            if teamSwitch(packet.carStatusData[getPlayerIndex()].actualTyreCompound) == 9 or 10:
+                return "classicf1car"
+            elif teamSwitch(packet.carStatusData[getPlayerIndex()].actualTyreCompound) == 11 or 12 or 13 or 14 or 15:
+                return "f2car"
 
 def getCar():
     while True:
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketParticipantsData_V1):
-            return teamSwitch(packet.participants[getPlayerIndex()].teamId)
+            if(getAlternativeCarTypes()=="Classic F1 Car"):
+                return "Classic F1 Car"
+            elif(getAlternativeCarTypes()=="F2 Car"):
+                return "F2 Car"
+            else:
+                return teamSwitch(packet.participants[getPlayerIndex()].teamId)
 
 def getWeather():
     while True:
@@ -157,7 +190,7 @@ def showRacePresence():
                large_image=str(getTrack()),
                small_image=str(getCar()),
                large_text="Track",
-               small_text="Car")
+               small_text=teamInCorrectFormat(getCar()))
 
 def showQualiPresence(type):
     if(type=="ONE SHOT QUALI"):
@@ -167,7 +200,7 @@ def showQualiPresence(type):
                    large_image=str(getTrack()),
                    small_image=str(getCar()),
                    large_text="Track",
-                   small_text="Car")
+                   small_text=teamInCorrectFormat(getCar()))
 
     else:
         RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
@@ -176,7 +209,7 @@ def showQualiPresence(type):
                    large_image=str(getTrack()),
                    small_image= str(getCar()),
                    large_text="Track",
-                   small_text="Car")
+                   small_text=teamInCorrectFormat(getCar()))
 def showTimeTrialPresence():
     RPC.update(state="Weather: "+getWeather(),
                start=timer,
@@ -184,7 +217,7 @@ def showTimeTrialPresence():
                large_image = str(getTrack()),
                small_image= str(getCar()),
                large_text="Track",
-               small_text="Car")
+               small_text=teamInCorrectFormat(getCar()))
 
 while True:
     try:
@@ -206,9 +239,11 @@ while True:
                 showQualiPresence("ONE SHOT QUALI")
             elif (packet.sessionType == 12):
                 showTimeTrialPresence()
+            else:
+                RPC.update(start=timer, large_image="f12020")
 
     except socket.timeout:
-        RPC.update(start=timer)
+        RPC.update(start=timer, large_image="f12020")
 
 
 
