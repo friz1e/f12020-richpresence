@@ -12,7 +12,15 @@ udp_socket.bind(('', ))
 client_id = ''
 RPC = Presence(client_id)
 RPC.connect()
-RPC.update(start=timer, large_image="f12020")
+RPC.update(start=timer, large_image="f12020", details="Idling")
+
+def seconds2time(sec, n_msec=3):
+    if hasattr(sec,'__len__'):
+        return [seconds2time(s) for s in sec]
+    m, s = divmod(sec, 60)
+    h, m = divmod(m, 60)
+    pattern = '%%02d:%%0%d.%df' % (n_msec+3, n_msec)
+    return ('' + pattern) % (m, s)
 
 def getPlayerIndex():
     while True:
@@ -93,27 +101,29 @@ def teamInCorrectFormat(argument):
     }
     return switcher.get(argument, "Invalid team.")
 
-def getAlternativeCarTypes():
+def getCarType():
     while True:
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketCarStatusData_V1):
-            if teamSwitch(packet.carStatusData[getPlayerIndex()].actualTyreCompound) == 9 or 10:
+            if packet.carStatusData[getPlayerIndex()].actualTyreCompound == 9 or packet.carStatusData[getPlayerIndex()].actualTyreCompound == 10:
                 return "classicf1car"
-            elif teamSwitch(packet.carStatusData[getPlayerIndex()].actualTyreCompound) == 11 or 12 or 13 or 14 or 15:
+            elif 11 <= packet.carStatusData[getPlayerIndex()].actualTyreCompound <= 15:
                 return "f2car"
+            else :
+                return "f1car"
 
 def getCar():
     while True:
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketParticipantsData_V1):
-            if(getAlternativeCarTypes()=="Classic F1 Car"):
-                return "Classic F1 Car"
-            elif(getAlternativeCarTypes()=="F2 Car"):
-                return "F2 Car"
-            else:
+            if (getCarType() == "f1car"):
                 return teamSwitch(packet.participants[getPlayerIndex()].teamId)
+            elif (getCarType() == "classicf1car"):
+                return "classicf1car"
+            elif (getCarType() == "f2car"):
+                return "f2car"
 
 def getWeather():
     while True:
@@ -180,7 +190,7 @@ def getBestLap():
             if(packet.lapData[getPlayerIndex()].bestLapTime==0.0):
                 return "No lap time"
             else:
-                return packet.lapData[getPlayerIndex()].bestLapTime
+                return seconds2time(packet.lapData[getPlayerIndex()].bestLapTime, 3)
 
 
 def showRacePresence():
@@ -240,10 +250,10 @@ while True:
             elif (packet.sessionType == 12):
                 showTimeTrialPresence()
             else:
-                RPC.update(start=timer, large_image="f12020")
+                RPC.update(start=timer, large_image="f12020", details="Idling")
 
     except socket.timeout:
-        RPC.update(start=timer, large_image="f12020")
+        RPC.update(start=timer, large_image="f12020", details="Idling")
 
 
 
