@@ -2,6 +2,11 @@ from f1_2020_telemetry.packets import *
 from pypresence import Presence
 import socket
 import time
+import os
+import psutil
+
+while not "F1_2020_dx12.exe" in (p.name() for p in psutil.process_iter()):
+    continue
 
 timer = int(round(time.time() * 1000))
 
@@ -254,6 +259,12 @@ while True:
 
     except socket.timeout:
         RPC.update(start=timer, large_image="f12020", details="Idling")
+        while not "F1_2020_dx12.exe" in (p.name() for p in psutil.process_iter()):
+            RPC.clear(os.getpid())
+            continue
+
+
+
 
 
 
