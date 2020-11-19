@@ -5,8 +5,10 @@ import time
 import os
 import psutil
 
+while not "Discord.exe" in (p.name() for p in psutil.process_iter()):
+        continue
 while not "F1_2020_dx12.exe" in (p.name() for p in psutil.process_iter()):
-    continue
+        continue
 
 timer = int(round(time.time() * 1000))
 
@@ -86,6 +88,8 @@ def teamSwitch(argument):
         7: "haas",
         8: "mclaren",
         9: "alfaromeo",
+        41: "multiplayercar",
+        255: "myteamcar"
     }
     return switcher.get(argument, "Invalid car.")
 
@@ -102,7 +106,9 @@ def teamInCorrectFormat(argument):
         "mclaren": "McLaren",
         "alfaromeo": "Alfa Romeo",
         "classicf1car": "Classic F1 Car",
-        "f2car": "F2 Car"
+        "f2car": "F2 Car",
+        "multiplayercar": "Multiplayer Car",
+        "myteamcar": "My Team Car"
     }
     return switcher.get(argument, "Invalid team.")
 
@@ -170,7 +176,6 @@ def getNumberOfDrivers():
         if isinstance(packet, PacketParticipantsData_V1):
             return packet.numActiveCars
 
-
 def getLapNumber():
     while True:
         udp_packet = udp_socket.recv(2048)
@@ -178,14 +183,12 @@ def getLapNumber():
         if isinstance(packet, PacketLapData_V1):
             return packet.lapData[getPlayerIndex()].currentLapNum
 
-
 def getTotalLapNumber():
     while True:
         udp_packet = udp_socket.recv(2048)
         packet = unpack_udp_packet(udp_packet)
         if isinstance(packet, PacketSessionData_V1):
             return packet.totalLaps
-
 
 def getBestLap():
     while True:
@@ -197,18 +200,50 @@ def getBestLap():
             else:
                 return seconds2time(packet.lapData[getPlayerIndex()].bestLapTime, 3)
 
+def isUserSpectating():
+    while True:
+        udp_packet = udp_socket.recv(2048)
+        packet = unpack_udp_packet(udp_packet)
+        if isinstance(packet, PacketSessionData_V1):
+            if (packet.isSpectating == 1):
+                return True
+            else:
+                return False
 
 def showRacePresence():
-    RPC.update(state=str(str(getPlayerPosition())+"/"+str(getNumberOfDrivers())),
-               start=timer,
-               details="Race | " +str(getLapNumber())+"/"+str(getTotalLapNumber())+" laps",
-               large_image=str(getTrack()),
-               small_image=str(getCar()),
-               large_text="Track",
-               small_text=teamInCorrectFormat(getCar()))
+    if(isUserSpectating()==True):
+            RPC.update(state=str(getTotalLapNumber())+" laps race",
+                       start=timer,
+                       details=str(("Spectating "+str(getNumberOfDrivers()) + " driver") if getNumberOfDrivers()==1 else ("Spectating "+str(getNumberOfDrivers()) + " drivers")),
+                       large_image=str(getTrack()),
+                       large_text="Track")
+
+    elif (getTotalLapNumber() < getLapNumber()):
+        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())),
+                   start=timer,
+                   details="Race | Finished",
+                   large_image=str(getTrack()),
+                   small_image=str(getCar()),
+                   large_text="Track",
+                   small_text=teamInCorrectFormat(getCar()))
+    else:
+        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())),
+                   start=timer,
+                   details="Race | " + str(getLapNumber()) + "/" + str(getTotalLapNumber()) + " laps",
+                   large_image=str(getTrack()),
+                   small_image=str(getCar()),
+                   large_text="Track",
+                   small_text=teamInCorrectFormat(getCar()))
 
 def showQualiPresence(type):
-    if(type=="ONE SHOT QUALI"):
+    if (isUserSpectating() == True):
+        RPC.update(state=str(type),
+                   start=timer,
+                   details=str(("Spectating " + str(getNumberOfDrivers()) + " driver") if getNumberOfDrivers() == 1 else ("Spectating " + str(getNumberOfDrivers()) + " drivers")),
+                   large_image=str(getTrack()),
+                   large_text="Track")
+
+    if(type=="OSQ"):
         RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
                    start=timer,
                    details=type + " | " +getWeather(),
@@ -249,9 +284,9 @@ while True:
             elif (packet.sessionType == 7):
                 showQualiPresence("Q3")
             elif (packet.sessionType == 8):
-                showQualiPresence("SHORT QUALIFYING")
+                showQualiPresence("SQ")
             elif (packet.sessionType == 9):
-                showQualiPresence("ONE SHOT QUALI")
+                showQualiPresence("OSQ")
             elif (packet.sessionType == 12):
                 showTimeTrialPresence()
             else:
