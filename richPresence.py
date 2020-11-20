@@ -10,16 +10,14 @@ while not "Discord.exe" in (p.name() for p in psutil.process_iter()):
 while not "F1_2020_dx12.exe" in (p.name() for p in psutil.process_iter()):
         continue
 
-timer = int(round(time.time() * 1000))
-
 udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 udp_socket.settimeout(10.0)
-udp_socket.bind(('', ))
+udp_socket.bind(('localhost', 20777))
 
-client_id = ''
+client_id = '778395319900700702'
 RPC = Presence(client_id)
 RPC.connect()
-RPC.update(start=timer, large_image="f12020", details="Idling")
+RPC.update(large_image="f12020", details="Idling")
 
 def seconds2time(sec, n_msec=3):
     if hasattr(sec,'__len__'):
@@ -212,23 +210,20 @@ def isUserSpectating():
 
 def showRacePresence():
     if(isUserSpectating()==True):
-            RPC.update(state=str(getTotalLapNumber())+" laps race",
-                       start=timer,
+            RPC.update(state=str(getTotalLapNumber())+" laps | "+getWeather(),
                        details=str(("Spectating "+str(getNumberOfDrivers()) + " driver") if getNumberOfDrivers()==1 else ("Spectating "+str(getNumberOfDrivers()) + " drivers")),
                        large_image=str(getTrack()),
                        large_text="Track")
 
     elif (getTotalLapNumber() < getLapNumber()):
-        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())),
-                   start=timer,
+        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())+" | "+getWeather()),
                    details="Race | Finished",
                    large_image=str(getTrack()),
                    small_image=str(getCar()),
                    large_text="Track",
                    small_text=teamInCorrectFormat(getCar()))
     else:
-        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())),
-                   start=timer,
+        RPC.update(state=str(str(getPlayerPosition()) + "/" + str(getNumberOfDrivers())+" | "+getWeather()),
                    details="Race | " + str(getLapNumber()) + "/" + str(getTotalLapNumber()) + " laps",
                    large_image=str(getTrack()),
                    small_image=str(getCar()),
@@ -237,15 +232,13 @@ def showRacePresence():
 
 def showQualiPresence(type):
     if (isUserSpectating() == True):
-        RPC.update(state=str(type),
-                   start=timer,
+        RPC.update(state=str(type)+" | "+getWeather(),
                    details=str(("Spectating " + str(getNumberOfDrivers()) + " driver") if getNumberOfDrivers() == 1 else ("Spectating " + str(getNumberOfDrivers()) + " drivers")),
                    large_image=str(getTrack()),
                    large_text="Track")
 
     if(type=="OSQ"):
-        RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
-                   start=timer,
+        RPC.update(state=str(getPlayerPosition()+" at this moment"),
                    details=type + " | " +getWeather(),
                    large_image=str(getTrack()),
                    small_image=str(getCar()),
@@ -253,8 +246,7 @@ def showQualiPresence(type):
                    small_text=teamInCorrectFormat(getCar()))
 
     else:
-        RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())),
-                   start=timer,
+        RPC.update(state=str(getPlayerPosition() + "/" + str(getNumberOfDrivers())+" | "+getWeather()),
                    details= type+" | Best lap: " +str(getBestLap()),
                    large_image=str(getTrack()),
                    small_image= str(getCar()),
@@ -262,7 +254,6 @@ def showQualiPresence(type):
                    small_text=teamInCorrectFormat(getCar()))
 def showTimeTrialPresence():
     RPC.update(state="Weather: "+getWeather(),
-               start=timer,
                details= "Time Trial | "+str(getBestLap()),
                large_image = str(getTrack()),
                small_image= str(getCar()),
@@ -271,7 +262,6 @@ def showTimeTrialPresence():
 
 def showPracticePresence(type):
     RPC.update(state="Weather: " + getWeather(),
-               start=timer,
                details=type +" | " +str(getBestLap()),
                large_image=str(getTrack()),
                small_image=str(getCar()),
@@ -307,10 +297,10 @@ while True:
             elif (packet.sessionType == 4):
                 showTimeTrialPresence("Short Practice")
             else:
-                RPC.update(start=timer, large_image="f12020", details="Idling")
+                RPC.update(large_image="f12020", details="Idling")
 
     except socket.timeout:
-        RPC.update(start=timer, large_image="f12020", details="Idling")
+        RPC.update(large_image="f12020", details="Idling")
         while not "F1_2020_dx12.exe" in (p.name() for p in psutil.process_iter()):
             RPC.clear(os.getpid())
             continue
