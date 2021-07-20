@@ -14,7 +14,7 @@ udp_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
 udp_socket.settimeout(10.0)
 udp_socket.bind(('localhost', 20777))
 
-client_id = '778395319900700702'
+client_id = ''
 RPC = Presence(client_id)
 RPC.connect()
 RPC.update(large_image="f12020", details="Idling")
